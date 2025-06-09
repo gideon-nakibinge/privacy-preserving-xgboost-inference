@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      run: |
+        docker build --no-cache -t ppxgboost-demo .
+
+    - name: Run tests inside container
+      run: |
+        docker run --rm ppxgboost-demo pytest --maxfail=1 --disable-warnings -q
+
+    - name: Set up Python for linting
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Lint with Black & Flake8
+      run: |
+        pip install --upgrade pip
+        pip install black flake8
+        black --check .
+        flake8 src test
